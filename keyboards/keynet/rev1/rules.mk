@@ -21,3 +21,5 @@ NKRO_ENABLE = yes	            # Enable N-Key Rollover
 VIRTSER_ENABLE = yes
 FORCE_NKRO = yes
 KEYBOARD_SHARED_EP = yes
+
+SWAP_HANDS_ENABLE = yes
