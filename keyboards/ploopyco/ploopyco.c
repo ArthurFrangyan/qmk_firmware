@@ -57,6 +57,11 @@
 #ifndef ENCODER_BUTTON_COL
 #    define ENCODER_BUTTON_COL 0
 #endif
+#ifdef PLOOPY_DRAGSCROLL_COMBO
+#   ifndef PLOOPY_DRAGSCROLL_COMBO_THRESHOLD
+#       define PLOOPY_DRAGSCROLL_COMBO_THRESHOLD 0.5
+#   endif
+#endif
 
 keyboard_config_t keyboard_config;
 uint16_t          dpi_array[] = PLOOPY_DPI_OPTIONS;
@@ -68,11 +73,15 @@ bool  is_drag_scroll       = false;
 float scroll_accumulated_h = 0;
 float scroll_accumulated_v = 0;
 
+#ifdef PLOOPY_DRAGSCROLL_COMBO
+bool combo_scroll_should_toggle = false;
+#endif
+
 #ifdef ENCODER_ENABLE
 uint16_t lastScroll        = 0; // Previous confirmed wheel event
 uint16_t lastMidClick      = 0; // Stops scrollwheel from being read if it was pressed
-pin_t    encoder_pins_a[1] = ENCODERS_PAD_A;
-pin_t    encoder_pins_b[1] = ENCODERS_PAD_B;
+pin_t    encoder_pins_a[1] = ENCODER_A_PINS;
+pin_t    encoder_pins_b[1] = ENCODER_B_PINS;
 bool     debug_encoder     = false;
 
 bool encoder_update_kb(uint8_t index, bool clockwise) {
@@ -128,10 +137,32 @@ void encoder_driver_task(void) {
 }
 #endif
 
+void toggle_drag_scroll(void) {
+    is_drag_scroll ^= 1;
+}
+
+void cycle_dpi(void) {
+    keyboard_config.dpi_config = (keyboard_config.dpi_config + 1) % DPI_OPTION_SIZE;
+    eeconfig_update_kb(keyboard_config.raw);
+    pointing_device_set_cpi(dpi_array[keyboard_config.dpi_config]);
+}
+
 report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
     if (is_drag_scroll) {
         scroll_accumulated_h += (float)mouse_report.x / PLOOPY_DRAGSCROLL_DIVISOR_H;
         scroll_accumulated_v += (float)mouse_report.y / PLOOPY_DRAGSCROLL_DIVISOR_V;
+
+#ifdef PLOOPY_DRAGSCROLL_COMBO
+        if (combo_scroll_should_toggle && (
+            abs(scroll_accumulated_h) > PLOOPY_DRAGSCROLL_COMBO_THRESHOLD ||
+            abs(scroll_accumulated_v) > PLOOPY_DRAGSCROLL_COMBO_THRESHOLD
+        )) {
+            // The user moved the ball past the threshold so we'll cancel the
+            // toggle. This keeps the trackball scrolling until the user lifts
+            // the drag scroll key.
+            combo_scroll_should_toggle = false;
+        }
+#endif
 
         // Assign integer parts of accumulated scroll values to the mouse report
         mouse_report.h = (int8_t)scroll_accumulated_h;
@@ -174,17 +205,32 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
     }
 
     if (keycode == DPI_CONFIG && record->event.pressed) {
-        keyboard_config.dpi_config = (keyboard_config.dpi_config + 1) % DPI_OPTION_SIZE;
-        eeconfig_update_kb(keyboard_config.raw);
-        pointing_device_set_cpi(dpi_array[keyboard_config.dpi_config]);
+        cycle_dpi();
     }
 
     if (keycode == DRAG_SCROLL) {
-#ifdef PLOOPY_DRAGSCROLL_MOMENTARY
+#ifdef PLOOPY_DRAGSCROLL_COMBO
+        if (record->event.pressed) {
+            // The user is holding down the drag scroll key, we'll enable a flag
+            // to assert if it should be treated as a toggle.
+            combo_scroll_should_toggle = true;
+            toggle_drag_scroll();
+        } else {
+            if (combo_scroll_should_toggle) {
+                // The user lifted the drag scroll key and did not move it, so
+                // the scroll state will stay on (toggled).
+                combo_scroll_should_toggle = false;
+            } else {
+                // The user has moved the trackball while holding the drag scroll
+                // key so we cancel the toggle/scroll once the key is lifted.
+                is_drag_scroll = false;
+            }
+        }
+#elif defined(PLOOPY_DRAGSCROLL_MOMENTARY)
         is_drag_scroll = record->event.pressed;
 #else
         if (record->event.pressed) {
-            is_drag_scroll ^= 1;
+            toggle_drag_scroll();
         }
 #endif
     }

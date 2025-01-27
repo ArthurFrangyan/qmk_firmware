@@ -5,16 +5,16 @@
 * [Trackball Mini](trackball_mini/)
 * [Trackball Nano](trackball_nano/)
 * [Trackball Thumb](trackball_thumb/)
-* [Adept/Madromys](manromys/)
+* [Adept/Madromys](madromys/)
 
 # Customizing your PloopyCo Device
 
 There are a number of behavioral settings that you can use to help customize your experience
-|                                 |                   |                                                           |
-|---------------------------------|-------------------|-----------------------------------------------------------|
-| `PLOOPY_IGNORE_SCROLL_CLICK`    | *__not_defined__* | Ignores scroll wheel if it is pressed down.               |
-| `PLOOPY_SCROLL_DEBOUNCE`        | `5`               | Number of milliseconds between scroll events.             |
-| `PLOOPY_SCROLL_BUTTON_DEBOUNCE` | `100`             | Time to ignore scroll events after pressing scroll wheel. |
+|Define                         |Default Value|Description                                              |
+|-------------------------------|-------------|---------------------------------------------------------|
+|`PLOOPY_IGNORE_SCROLL_CLICK`   |*Not defined*|Ignores scroll wheel if it is pressed down.              |
+|`PLOOPY_SCROLL_DEBOUNCE`       |`5`          |Number of milliseconds between scroll events.            |
+|`PLOOPY_SCROLL_BUTTON_DEBOUNCE`|`100`        |Time to ignore scroll events after pressing scroll wheel.|
 
 ## DPI
 
@@ -43,3 +43,4 @@ Nothing needs to be enabled to use this functionality.  Just add the `DRAG_SCROL
 * `#define PLOOPY_DRAGSCROLL_DIVISOR_H 8.0` - Sets the horizontal movement divisor to use when drag scroll is enabled.
 * `#define PLOOPY_DRAGSCROLL_DIVISOR_V 8.0` - Sets the vertical movement divisor to use when drag scroll is enabled.
 * `#define PLOOPY_DRAGSCROLL_INVERT` - This reverses the direction that the scroll is performed.
+* `#define PLOOPY_DRAGSCROLL_COMBO` - Makes the key into a momentary key when held and scrolled, but toggle when pressed without scrolling.
